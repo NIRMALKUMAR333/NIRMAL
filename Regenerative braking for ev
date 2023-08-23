@@ -1,0 +1,136 @@
+#include <LiquidCrystal_I2C.h> //Library for I2C lcd
+LiquidCrystal_I2C lcd(0x27,20,4);
+
+#define ON 1
+#define OFF 0
+#define CC_MODE 1
+#define CV_MODE 0
+#define OUTPUT_RELAY1 2
+#define OUTPUT_RELAY2 3
+#define Blinker 8
+
+float EMF_BAT1 = 0;
+float EMF_BAT2 = 0;
+int EMF_MIN = 350;
+int EMF_MAX = 360;
+int Relay1status = CV_MODE; 
+int Relay2status = CV_MODE;
+char TEMP_STR[10];
+
+
+void setBlinker ( int status )
+{
+  if (status) //== on
+    digitalWrite(Blinker,HIGH);
+  else // off
+    digitalWrite(Blinker,LOW);
+}
+
+void setRelay1 ( int status )
+{
+
+  Relay1status = status;
+  if (status) //== on
+    digitalWrite(OUTPUT_RELAY1,HIGH);
+  else // off
+    digitalWrite(OUTPUT_RELAY1,LOW);
+
+}
+//===============================================================
+void setRelay2 ( int status )
+{
+  Relay2status = status;
+  if (status) //== on
+    digitalWrite(OUTPUT_RELAY2,HIGH);
+  else // off
+    digitalWrite(OUTPUT_RELAY2,LOW);
+
+}
+
+void setup() {
+  Serial.begin(9600);
+  lcd.begin(); //initialization the lcd
+  lcd.backlight();
+  pinMode(OUTPUT_RELAY1, OUTPUT);
+  pinMode(OUTPUT_RELAY2, OUTPUT);
+  lcd.setCursor(0,0);
+  lcd.print("LiFePO4 Charger");
+  delay(2000);
+  lcd.clear();
+}
+
+void loop() {
+  setBlinker(OFF);
+  delay(100);
+  setBlinker(ON);
+  delay(100);
+  int Value1 =  analogRead(A0);
+  int Value2 =  analogRead(A1);
+  EMF_BAT1 = Value1 * ((10.0)/1023.0);
+  EMF_BAT2 = Value2 * ((10.0)/1023.0);
+  Serial.println(EMF_BAT1);
+  Serial.println(EMF_BAT2);
+  lcd.setCursor(0,0);
+  lcd.print("BAT1:");
+  if(Relay1status == CC_MODE && Value1>600)
+  {
+    lcd.print(F("FULL/ABSENT"));
+    setRelay1(CV_MODE);
+    }
+    else if(Relay1status == CV_MODE && Value1>=430)
+    {
+      lcd.print(F("FULL/ABSENT"));
+      setRelay1(CV_MODE);
+      }
+      else if(Value1<250)
+      {
+        lcd.print(EMF_BAT1);
+        lcd.print (F("DEAD/ERR  "));
+        setRelay1(CV_MODE);
+        }
+        else if(Value1>345)
+      {
+        lcd.print(EMF_BAT1);
+        lcd.print (F("V   CV "));
+        setRelay1(CV_MODE);
+        }
+        else if(Value1<=345)
+      {
+        lcd.print(EMF_BAT1);
+        lcd.print (F("V   CC "));
+        setRelay1(CC_MODE);
+        }
+
+        
+  lcd.setCursor(0,1);
+  lcd.print("BAT2:");
+  if(Relay2status == CC_MODE && Value2>600)
+  {
+    lcd.print(F("FULL/ABSENT"));
+    setRelay2(CV_MODE);
+    }
+    else if(Relay2status == CV_MODE && Value2>=430)
+    {
+      lcd.print(F("FULL/ABSENT"));
+      setRelay2(CV_MODE);
+      }
+      else if(Value2<250)
+      {
+        lcd.print(EMF_BAT2);
+        lcd.print (F("DEAD/ERR  "));
+        setRelay2(CV_MODE);
+        }
+        else if(Value2>345)
+      {
+        lcd.print(EMF_BAT2);
+        lcd.print (F("V   CV "));
+        setRelay2(CV_MODE);
+        }
+        else if(Value2<=345)
+      {
+        lcd.print(EMF_BAT2);
+        lcd.print (F("V   CC "));
+        setRelay2(CC_MODE);
+        }
+  
+}
